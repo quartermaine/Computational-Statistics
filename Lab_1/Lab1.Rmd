@@ -1,0 +1,215 @@
+---
+title: "Lab1"
+author: "Andreas C Charitos"
+date: "23 Jan 2019"
+output: pdf_document
+
+---
+
+
+#Question 1
+
+
+Running the 2 snippets we get the following results 
+
+
+First snippet
+-------------
+
+```{r}
+
+x1<-1/3 ; x2<-1/4
+if(x1-x2==1/12){
+  print("Subtraction is correct")
+}else{ 
+  print("Subtraction is wrong")
+}
+
+```
+
+Second snippet
+--------------
+
+```{r}
+x1<-1 ; x2<-1/2
+if(x1-x2==1/2){
+  print ("Subtraction is correct")
+}else{
+  print ("Subraction is wrong")
+}
+
+```
+
+
+Evaluating the results of the 2 snippets we see that in the first occasion we get the wrong print of the if-else statement.The problem lies to the fact that float numbers that have infinite numbers of decimals can't be represented exactly in the binary system in computers due to memory storage limitation.Using print(x1-x2,digits=16) and print(1/12,digits=16) we will see that the resulting floats are ( 0.08333333333333331,0.08333333333333333) respectfully and they are not the same causing the condition of unerflow which leads to the failure of the if statement and evaluation of else. 
+We can adress this problem using the "all_equals()" in the if statement instead of "==" to compare the numbers and we will see that the if statement will be executed and the correctly print message will be outputed.
+The second statement is evaluated correctly and we get the correct print output because 1/2 has finite numbers of decimals so we don't have the occurence of 
+underflow here.
+
+
+#Question 2
+
+
+```{r}
+derivative <-function(f,epsilon){
+  d<-((f+epsilon)-f)/epsilon
+  return(d)
+}
+
+cat("=============================================\n",
+    "The derivative for x=1 is :",derivative(1,10^-15),"\n",
+    "The derivative for x=10000 is :",derivative(100000,10^-15))
+
+```
+
+
+The true value for the function using the function $f(x)=x$ is $f'(x)= \frac{f(x+\epsilon)-f(x)}{\epsilon}=\frac{(x+\epsilon)-x}{\epsilon}=1$
+is always constant with value 1.Regarding the result of the derivative function we see that for $x=100000$ R doesn't take into account the decimals after a specific number of x and rounds the number to the nearest integer which is 100000 due to underflow occurance so the numeretor of the derivative formula becomes 0 leading finally to 0.When instead $x=1$ the numerator evaluated is  1.1102230246251565e-15 and the devision with epsilon $10^-15$ is just discards the last 15 decimals resulting  1.1102230246251565.
+
+
+#Question 3
+
+```{r}
+set.seed(123456)
+myvar<-function(vec){
+  
+  n<-length(vec)
+  variance<-(sum(vec^2)-(sum(vec)^2)/n)/(n-1)
+  return(variance)
+  
+}
+
+myvec<-rnorm(10000,10^8,1)
+
+
+y<-double(10000)
+
+for (i in 1:length(myvec)){
+  x<-myvec[1:i]
+  y[i]<-myvar(x-var(x,na.rm = T))
+}
+
+plot(seq(1:10000),y,main="Yi vs i" )
+
+```
+
+
+The plot above shows the dependence $Y_i$ on $i$ with the formula $Var(x)= \frac {1}{n-1} \ (\sum_{i=1}^n x_i^2-\frac{1}{n} (\sum_{i=1}^n x_i)^2)$ given.
+As we can see from the plot we got a lot of curves  under and over 0 meaning that we have diffrences in the calculations of the variance using the formula given compared with the var() function. This occurs because if we see the formula the term $\sum_{i=1}^n x_i^2$ where we square each value of the vector we tend to lose precision because of arithmetic underflow and all the latter calcucations are affected leading to deviations from the true result.
+
+
+
+```{r}
+set.seed(12345)
+myvar1<-function(v){
+  n<-length(v)
+  variance<-sum((v-mean(v))^2)/(n-1)
+  return(variance)
+}
+
+
+y1<-double(10000)
+
+for (i in 1:length(myvec)){
+  x1<-myvec[1:i]
+  y1[i]<-myvar1(x1)-var(x1)
+}
+
+plot(seq(1:10000),y1,col=ifelse(y1>1.2e-16 | y1< -1.2e-16, "red","black"),
+     main="Yi vs i" )
+
+
+```
+
+
+The plot above shows the dependence $Y_i$ on $i$ with the formula $Var(x)= \frac {\sum_{i=1}^n( x_i-\mu)^2}{n-1}$ where $\mu$ is the mean.
+Using the new formula where we center the points arround the mean we see that we have an improvement in the range of the errors and the deviation of the errors is steady and we can see an upper and a lower band with few errors lie beyond these linear bands represented with red in the plot.Also we can observe that the range of the errors is much smaller with means the formula used almost as good as the var() basic function in R.
+
+
+#Question 4
+
+Using the unscaled data first 
+-----------------------------
+
+```{r}
+
+tecator<-readxl::read_excel("tecator.xls")
+
+tecator<-as.data.frame(tecator)
+
+
+X<-tecator[,!names(tecator)%in%c("Sample","Protein")]
+X$intercept<-1
+X<-as.matrix(X)
+y<-tecator$Protein
+
+A<-t(X)%*%X
+b<-t(X)%*%y
+
+try(solve(A,b))
+cat("The result of solve in the unscaled data is : \n","Error in solve.default(A, b) : 
+  system is computationally singular: reciprocal condition number = 7.78822e-17")
+
+```
+
+When we used the unscaled data solve returns an error that the system is computationally singular and we can't solve the linear equation and the function exits.
+
+
+
+```{r}
+cat("The value of condition number is :",kappa(A))
+
+```
+
+Printing the number of kappa for the value of A matrix we see that is very big and that implies that the matrix is said to be ill-conditioned a very small
+change in matrix A will cause a large error in b and makes the solution unstable.
+
+This happens because the tolerence returned  is larger than the default threshold set by the function solve (argument tolerence) so an error returned and we cannot get a solution.The torrelance is related to conditon number by the function $tolerance=\frac{1}{condition number}$ so in our case 
+$tolerance=\frac{1}{kappa(A)}=7.425326e-16$ and it is bigger that the threshold of $7.425326e-17$ that is set by solve function as we see in the printed error resulting the end of execution of the function.
+
+
+Using the scaled data now 
+-------------------------
+
+
+```{r}
+library(knitr)
+
+X1<-as.data.frame(scale(tecator[,!names(tecator)%in%c("Sample","Protein")]))
+X1$intercept<-1
+X1<-as.matrix(X1)
+
+y1<-tecator$Protein
+
+
+A1<-t(X1)%*%X1
+b1<-t(X1)%*%y1
+
+cat("The result of solve in the scaled data is : \n")
+a<-solve(A1,b1)
+
+kable(a,col.names = c("coefficient") ,top.label="Output solve scaled")
+
+```
+
+
+Using the scaled data we where able to solve the linear system and get coefficients for every feature value.
+
+
+
+```{r}
+
+cat("The value of condition number is :",kappa(A1))
+
+```
+
+Printing the number of kappa again we can see that is still high but much less that the previous used with the unscaled data and we where able to solve the
+linear system and get coefficient values.
+
+When we scale the data we see that the linear system did not get any better or worse the linear dependences of the column features are still present but we manage to make the value of condition number smaller with scaling.This is happening because If we look at the definition of the condition number $k(A)=||A||*||A^-1||$ and just by making the range of the columns smaller the magnitude got smaller leading to a smaller value of condition number which is below threshold value of solve function and we manage to get the solution.The tolerence now is $tolerance=\frac{1}{kappa(A1)}=\frac{1}{490471518993}=2.038854e-12$ which is smaller than the default $7.425326e-17$ set by solve so now we are able to 
+get a solution.
+
+
+
+
+

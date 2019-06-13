@@ -1,0 +1,18 @@
+---
+title: "Untitled"
+author: "Andreas"
+date: "11  2019"
+output: pdf_document
+---
+
+
+
+$$h(x)=\frac{f(x)}{g(x)}=\frac{\frac{1}{\sqrt 2\pi \quad e^\frac{x^2}{2}}}{\frac{1}{2e^{x}}=$$
+
+
+
+
+
+
+
+
